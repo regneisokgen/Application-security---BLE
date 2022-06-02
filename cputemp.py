@@ -26,6 +26,10 @@ import dbus
 from advertisement import Advertisement
 from service import Application, Service, Characteristic, Descriptor
 from gpiozero import CPUTemperature
+from mqttPublisher import Publisher
+import paho.mqtt.client as mqtt
+import time
+import json
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
@@ -136,12 +140,23 @@ class UnitCharacteristic(Characteristic):
         self.add_descriptor(UnitDescriptor(self))
 
     def WriteValue(self, value, options):
-        val = str(value[0]).upper()
-        if val == "C":
-            self.service.set_farenheit(False)
+        val = str(value[:2]).upper()
+        if val == "ON":
+            message = {"status": "On", "frequency": 1150, "speed": 70, "direction": 100}
+            data_out = json.dumps(message)
+            result = client.publish("sensor/status/run", data_out)
+            # result: [0, 1]
+            status = result[0]
+            if status == 0:
+                print("Status update published")
+            else:
+                print("Failed to publish update to topic")
+            #Originally C
+            #self.service.set_farenheit(False)
             print("value written {}. to c".format(val))
-        elif val == "F":
-            self.service.set_farenheit(True)
+        elif val == "OF":
+            pass
+            #self.service.set_farenheit(True)
 
     def ReadValue(self, options):
         value = []
@@ -171,6 +186,9 @@ class UnitDescriptor(Descriptor):
 
         return value
 
+
+mqttinit = Publisher()
+client = mqttinit.connect_on("192.168.2.67", 1883)
 app = Application()
 app.add_service(ThermometerService(0))
 app.register()

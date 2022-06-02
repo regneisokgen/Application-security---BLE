@@ -137,11 +137,14 @@ class UnitCharacteristic(Characteristic):
 
     def WriteValue(self, value, options):
         val = str(value[0]).upper()
+        print(val)
         if val == "C":
             self.service.set_farenheit(False)
             print("value written {}. to c".format(val))
         elif val == "F":
             self.service.set_farenheit(True)
+        else:
+            print("value not C or F detected")
 
     def ReadValue(self, options):
         value = []

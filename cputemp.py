@@ -140,8 +140,11 @@ class UnitCharacteristic(Characteristic):
         self.add_descriptor(UnitDescriptor(self))
 
     def WriteValue(self, value, options):
-        val = str(value[:2]).upper()
-        if val == "ON":
+        #need to transform dbus bytes to TEXT
+        val = value
+        transformed = dbus.Array(val, signature=dbus.Signature('y'))
+        text = "%s" % ''.join([str(v) for v in transformed])
+        if text == "On":
             message = {"status": "On", "frequency": 1150, "speed": 70, "direction": 100}
             data_out = json.dumps(message)
             result = client.publish("sensor/status/run", data_out)
@@ -154,8 +157,9 @@ class UnitCharacteristic(Characteristic):
             #Originally C
             #self.service.set_farenheit(False)
             print("value written {}. to c".format(val))
-        elif val == "OF":
+        elif text == "Off":
             pass
+            print("Off detected")
             #self.service.set_farenheit(True)
         else:
             print("Else value written {}".format(val))

@@ -36,6 +36,7 @@ class ThermometerAdvertisement(Advertisement):
         self.add_local_name("Thermometer")
         self.include_tx_power = True
 
+# one service in the GATT profile
 class ThermometerService(Service):
     THERMOMETER_SVC_UUID = "00000001-710e-4a5b-8d75-3e5b444bc3cf"
 
@@ -52,6 +53,7 @@ class ThermometerService(Service):
     def set_farenheit(self, farenheit):
         self.farenheit = farenheit
 
+#Characteristics under a profile
 class TempCharacteristic(Characteristic):
     TEMP_CHARACTERISTIC_UUID = "00000002-710e-4a5b-8d75-3e5b444bc3cf"
 
@@ -104,9 +106,10 @@ class TempCharacteristic(Characteristic):
 
         return value
 
+# enum the (starting) attr handle to end grp handle
 class TempDescriptor(Descriptor):
     TEMP_DESCRIPTOR_UUID = "2901"
-    TEMP_DESCRIPTOR_VALUE = "CPU Temperature"
+    TEMP_DESCRIPTOR_VALUE = "CPU Temp"
 
     def __init__(self, characteristic):
         Descriptor.__init__(
@@ -136,6 +139,7 @@ class UnitCharacteristic(Characteristic):
         val = str(value[0]).upper()
         if val == "C":
             self.service.set_farenheit(False)
+            print("value written {}. to c".format(val))
         elif val == "F":
             self.service.set_farenheit(True)
 
@@ -150,7 +154,7 @@ class UnitCharacteristic(Characteristic):
 
 class UnitDescriptor(Descriptor):
     UNIT_DESCRIPTOR_UUID = "2901"
-    UNIT_DESCRIPTOR_VALUE = "Temperature Units (F or C)"
+    UNIT_DESCRIPTOR_VALUE = "Control the device, option is topic sensor/status/run to turn to turn on/off"
 
     def __init__(self, characteristic):
         Descriptor.__init__(

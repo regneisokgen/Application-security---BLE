@@ -177,7 +177,7 @@ class Characteristic(dbus.service.Object):
                         'Service': self.service.get_path(),
                         'UUID': self.uuid,
                         'Flags': self.flags,
-                        'Descriptors': dbus.Array(
+                        'WriteValues': dbus.Array(
                                 self.get_descriptor_paths(),
                                 signature='o')
                 }

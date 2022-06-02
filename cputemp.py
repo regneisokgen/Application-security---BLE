@@ -157,6 +157,8 @@ class UnitCharacteristic(Characteristic):
         elif val == "OF":
             pass
             #self.service.set_farenheit(True)
+        else:
+            print("Else value written {}".format(val))
 
     def ReadValue(self, options):
         value = []

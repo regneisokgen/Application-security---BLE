@@ -60,7 +60,7 @@ class UseCharacteristic(Characteristic):
             temp = (temp * 1.8) + 32
             unit = "F"
         '''
-
+# OK
         strtemp = 'Expected json "sensor/#", "On", "1150", "50", "0" for status, frequency, speed, direction'
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
@@ -152,8 +152,8 @@ class OnCharacteristic(Characteristic):
         value = []
 
         msg = '"sensor/status/run", "{}", "1150", "50", "0"'.fomat(self.status)
-        value.append(dbus.Byte(msg.encode()))
-
+        for m in msg:
+            value.append(dbus.Byte(m.encode()))
         return value
 
 
@@ -163,7 +163,7 @@ class OnDescriptor(Descriptor):
 
     def __init__(self, characteristic):
         Descriptor.__init__(
-            self, self.UNIT_DESCRIPTOR_UUID,
+            self, self.ON_DESCRIPTOR_UUID,
             ["read"],
             characteristic)
 

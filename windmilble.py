@@ -46,7 +46,7 @@ class UseCharacteristic(Characteristic):
 
         Characteristic.__init__(
             self, self.USE_CHARACTERISTIC_UUID,
-            ["notify", "read"], service)
+            ["read"], service)
         self.add_descriptor(UseDescriptor(self))
 
     def get_char_read_value(self):
@@ -61,7 +61,7 @@ class UseCharacteristic(Characteristic):
             unit = "F"
         '''
 # OK
-        strtemp = 'Expected json "sensor/#", "On", "1150", "50", "0" for status, frequency, speed, direction'
+        strtemp = 'JSON - sensor/change/direction || sensor/status/run || sensor/change/speed || sensor/complete/control {"status": status, "frequency": 1150, "speed": 50, "direction": 0}'
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
         return value
@@ -137,21 +137,26 @@ class OnCharacteristic(Characteristic):
                 print("Status update published")
             else:
                 print("Failed to publish update to topic")
-            #Originally C
-            #self.service.set_farenheit(False)
             print("value written {}. to c".format(val))
         elif text == "Off":
             self.status = 'Off'
-            pass
-            print("Off detected")
-            #self.service.set_farenheit(True)
+            message = {"status": "Off", "frequency": 1150, "speed": 70, "direction": 100}
+            data_out = json.dumps(message)
+            result = client.publish("sensor/status/run", data_out)
+            # result: [0, 1]
+            status = result[0]
+            if status == 0:
+                print("Status update published")
+            else:
+                print("Failed to publish update to topic")
+            print("value written {}. to c".format(val))
         else:
             print("Else value written {}".format(val))
 
     def ReadValue(self, options):
         value = []
 
-        msg = '"sensor/status/run", "{}", "1150", "50", "0"'.format(self.status)
+        msg = '{}'.format(self.status)
         for m in msg:
             value.append(dbus.Byte(m.encode()))
         return value
@@ -178,7 +183,7 @@ class OnDescriptor(Descriptor):
 
 
 mqttinit = Publisher()
-client = mqttinit.connect_on("192.168.2.67", 1883)
+client = mqttinit.connect_on("192.168.2.86", 1883)
 app = Application()
 app.add_service(WindmilService(0))
 app.register()

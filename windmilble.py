@@ -151,7 +151,7 @@ class OnCharacteristic(Characteristic):
     def ReadValue(self, options):
         value = []
 
-        msg = '"sensor/status/run", "{}", "1150", "50", "0"'.fomat(self.status)
+        msg = '"sensor/status/run", "{}", "1150", "50", "0"'.format(self.status)
         for m in msg:
             value.append(dbus.Byte(m.encode()))
         return value

@@ -1,31 +1,9 @@
 #!/usr/bin/python3
-
-"""Copyright (c) 2019, Douglas Otwell
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 import dbus
 
 from advertisement import Advertisement
 from service import Application, Service, Characteristic, Descriptor
-from gpiozero import CPUTemperature
+#from gpiozero import CPUTemperature
 from mqttPublisher import Publisher
 import paho.mqtt.client as mqtt
 import time
@@ -34,60 +12,63 @@ import json
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
 
-class ThermometerAdvertisement(Advertisement):
+class WindmilAdvertisement(Advertisement):
     def __init__(self, index):
         Advertisement.__init__(self, index, "peripheral")
-        self.add_local_name("Thermometer")
+        self.add_local_name("WindmilBLE")
         self.include_tx_power = True
 
 # one service in the GATT profile
-class ThermometerService(Service):
-    THERMOMETER_SVC_UUID = "00000001-710e-4a5b-8d75-3e5b444bc3cf"
+class WindmilService(Service):
+    WINDMIL_SVC_UUID = "00000001-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, index):
         self.farenheit = True
 
-        Service.__init__(self, index, self.THERMOMETER_SVC_UUID, True)
-        self.add_characteristic(TempCharacteristic(self))
-        self.add_characteristic(UnitCharacteristic(self))
+        Service.__init__(self, index, self.WINDMIL_SVC_UUID, True)
+        self.add_characteristic(UseCharacteristic(self))
+        self.add_characteristic(OnCharacteristic(self))
 
+'''
     def is_farenheit(self):
         return self.farenheit
 
     def set_farenheit(self, farenheit):
         self.farenheit = farenheit
+'''
 
 #Characteristics under a profile
-class TempCharacteristic(Characteristic):
-    TEMP_CHARACTERISTIC_UUID = "00000002-710e-4a5b-8d75-3e5b444bc3cf"
+class UseCharacteristic(Characteristic):
+    USE_CHARACTERISTIC_UUID = "00000002-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         self.notifying = False
 
         Characteristic.__init__(
-                self, self.TEMP_CHARACTERISTIC_UUID,
-                ["notify", "read"], service)
-        self.add_descriptor(TempDescriptor(self))
+            self, self.USE_CHARACTERISTIC_UUID,
+            ["notify", "read"], service)
+        self.add_descriptor(UseDescriptor(self))
 
-    def get_temperature(self):
+    def get_char_read_value(self):
         value = []
-        unit = "C"
+        #unit = "C"
 
-        cpu = CPUTemperature()
-        temp = cpu.temperature
+        #cpu = CPUTemperature()
+        #temp = cpu.temperature
+        '''
         if self.service.is_farenheit():
             temp = (temp * 1.8) + 32
             unit = "F"
+        '''
 
-        strtemp = str(round(temp, 1)) + " " + unit
+        strtemp = 'Expected json "sensor/#", "On", "1150", "50", "0" for status, frequency, speed, direction'
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
-
         return value
 
     def set_temperature_callback(self):
         if self.notifying:
-            value = self.get_temperature()
+            value = self.get_char_read_value()
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
 
         return self.notifying
@@ -95,10 +76,9 @@ class TempCharacteristic(Characteristic):
     def StartNotify(self):
         if self.notifying:
             return
-
         self.notifying = True
 
-        value = self.get_temperature()
+        value = self.get_char_read_value()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
         self.add_timeout(NOTIFY_TIMEOUT, self.set_temperature_callback)
 
@@ -106,38 +86,40 @@ class TempCharacteristic(Characteristic):
         self.notifying = False
 
     def ReadValue(self, options):
-        value = self.get_temperature()
+        value = self.get_char_read_value()
 
         return value
 
 # enum the (starting) attr handle to end grp handle
-class TempDescriptor(Descriptor):
-    TEMP_DESCRIPTOR_UUID = "2901"
-    TEMP_DESCRIPTOR_VALUE = "CPU Temp"
+class UseDescriptor(Descriptor):
+    USE_DESCRIPTOR_UUID = "2901"
+    USE_DESCRIPTOR_VALUE = "sensor/change/direction, sensor/status/run, sensor/change/speed, sensor/complete/control"
 
     def __init__(self, characteristic):
         Descriptor.__init__(
-                self, self.TEMP_DESCRIPTOR_UUID,
-                ["read"],
-                characteristic)
+            self, self.USE_DESCRIPTOR_UUID,
+            ["read"],
+            characteristic)
 
     def ReadValue(self, options):
         value = []
-        desc = self.TEMP_DESCRIPTOR_VALUE
+        desc = self.USE_DESCRIPTOR_VALUE
 
         for c in desc:
             value.append(dbus.Byte(c.encode()))
 
         return value
 
-class UnitCharacteristic(Characteristic):
-    UNIT_CHARACTERISTIC_UUID = "00000003-710e-4a5b-8d75-3e5b444bc3cf"
+
+class OnCharacteristic(Characteristic):
+    ON_CHARACTERISTIC_UUID = "00000003-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
+        self.status = ''
         Characteristic.__init__(
-                self, self.UNIT_CHARACTERISTIC_UUID,
-                ["read", "write"], service)
-        self.add_descriptor(UnitDescriptor(self))
+            self, self.ON_CHARACTERISTIC_UUID,
+            ["read", "write"], service)
+        self.add_descriptor(OnDescriptor(self))
 
     def WriteValue(self, value, options):
         #need to transform dbus bytes to TEXT
@@ -145,6 +127,7 @@ class UnitCharacteristic(Characteristic):
         transformed = dbus.Array(val, signature=dbus.Signature('y'))
         text = "%s" % ''.join([str(v) for v in transformed])
         if text == "On":
+            self.status = 'On'
             message = {"status": "On", "frequency": 1150, "speed": 70, "direction": 100}
             data_out = json.dumps(message)
             result = client.publish("sensor/status/run", data_out)
@@ -158,6 +141,7 @@ class UnitCharacteristic(Characteristic):
             #self.service.set_farenheit(False)
             print("value written {}. to c".format(val))
         elif text == "Off":
+            self.status = 'Off'
             pass
             print("Off detected")
             #self.service.set_farenheit(True)
@@ -167,25 +151,25 @@ class UnitCharacteristic(Characteristic):
     def ReadValue(self, options):
         value = []
 
-        if self.service.is_farenheit(): val = "F"
-        else: val = "C"
-        value.append(dbus.Byte(val.encode()))
+        msg = '"sensor/status/run", "{}", "1150", "50", "0"'.fomat(self.status)
+        value.append(dbus.Byte(msg.encode()))
 
         return value
 
-class UnitDescriptor(Descriptor):
-    UNIT_DESCRIPTOR_UUID = "2901"
-    UNIT_DESCRIPTOR_VALUE = "Control the device, option is topic sensor/status/run to turn to turn on/off"
+
+class OnDescriptor(Descriptor):
+    ON_DESCRIPTOR_UUID = "2901"
+    On_DESCRIPTOR_VALUE = "Control the device by publishing to sensor/status/run for on/off operation"
 
     def __init__(self, characteristic):
         Descriptor.__init__(
-                self, self.UNIT_DESCRIPTOR_UUID,
-                ["read"],
-                characteristic)
+            self, self.UNIT_DESCRIPTOR_UUID,
+            ["read"],
+            characteristic)
 
     def ReadValue(self, options):
         value = []
-        desc = self.UNIT_DESCRIPTOR_VALUE
+        desc = self.On_DESCRIPTOR_VALUE
 
         for c in desc:
             value.append(dbus.Byte(c.encode()))
@@ -196,13 +180,14 @@ class UnitDescriptor(Descriptor):
 mqttinit = Publisher()
 client = mqttinit.connect_on("192.168.2.67", 1883)
 app = Application()
-app.add_service(ThermometerService(0))
+app.add_service(WindmilService(0))
 app.register()
 
-adv = ThermometerAdvertisement(0)
+adv = WindmilAdvertisement(0)
 adv.register()
 
 try:
     app.run()
 except KeyboardInterrupt:
     app.quit()
+    adv.quit()

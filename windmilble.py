@@ -130,7 +130,7 @@ class OnCharacteristic(Characteristic):
             self.status = 'On'
             message = {"status": "On", "frequency": 1150, "speed": 70, "direction": 100}
             data_out = json.dumps(message)
-            result = client.publish("sensor/status/run", data_out)
+            result = client.publish_mqtt("sensor/status/run", data_out)
             # result: [0, 1]
             status = result[0]
             if status == 0:
@@ -142,7 +142,7 @@ class OnCharacteristic(Characteristic):
             self.status = 'Off'
             message = {"status": "Off", "frequency": 1150, "speed": 70, "direction": 100}
             data_out = json.dumps(message)
-            result = client.publish("sensor/status/run", data_out)
+            result = client.publish_mqtt("sensor/status/run", data_out)
             # result: [0, 1]
             status = result[0]
             if status == 0:

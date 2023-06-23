@@ -1,6 +1,6 @@
 CPUTemp
 ========== 
-Python GATT server example for the Raspberry Pi
+Python GATT server example for the Raspberry Pi. It leverages the existing MQTT publisher/subscribe model to provide BLE characteristic for read/write 
 
 Usage 
 ----- 

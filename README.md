@@ -1,6 +1,10 @@
 CPUTemp
 ========== 
-Python GATT server example for the Raspberry Pi. It leverages the existing MQTT publisher/subscribe model to provide BLE characteristic for read/write. This is to demostrate application vulnerabilities of BLE when TK is exchanged using Just Works. In Just Works, the TK is set to 0. Which makes brute-forcing STK to be very do-able. There is also no protection against MITM. 
+Python GATT server example for the Raspberry Pi. It leverages the existing MQTT publisher/subscribe model to provide BLE characteristic for read/write. 
+
+Application vulnerability 
+----- 
+This is to demostrate application vulnerabilities of BLE when TK is exchanged using Just Works. In Just Works, the TK is set to 0. Which makes brute-forcing STK to be very do-able. There is also no protection against MITM. 
 
 Usage 
 ----- 

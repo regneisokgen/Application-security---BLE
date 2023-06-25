@@ -8,7 +8,7 @@ This is to demostrate application vulnerabilities of BLE when TK is exchanged us
 
 Usage 
 ----- 
-    python3 cputemp.py
+    python3 windmilble.py
 
 The server should by accessable by any BLE client; I like to use
 the 'nRF Connect' app on my Android phone.
